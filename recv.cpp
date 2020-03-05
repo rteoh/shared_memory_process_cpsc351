@@ -20,7 +20,7 @@ const char recvFileName[] = "recvfile";
 
 /**
  * Sets up the shared memory segment and message queue
- * @param shmid - the id of the allocated shared memory 
+ * @param shmid - the id of the allocated shared memory
  * @param msqid - the id of the shared memory
  * @param sharedMemPtr - the pointer to the shared memory
  */
@@ -34,7 +34,7 @@ void init(int &shmid, int &msqid, void *&sharedMemPtr)
 		 3. Use the key in the TODO's below. Use the same key for the queue
 		    and the shared memory segment. This also serves to illustrate the difference
 		    between the key and the id used in message queues and shared memory. The id
-		    for any System V object (i.e. message queues, shared memory, and sempahores) 
+		    for any System V object (i.e. message queues, shared memory, and sempahores)
 		    is unique system-wide among all System V objects. Two objects, on the other hand,
 		    may have the same key.
 	 */
@@ -67,7 +67,7 @@ void init(int &shmid, int &msqid, void *&sharedMemPtr)
 	if (msqid == -1)
 	{
 		perror("mssget");
-		exit
+		exit(1);
 	}
 	printf("msqid(%d)", msqid);
 
@@ -92,7 +92,7 @@ void mainLoop()
 		exit(-1);
 	}
 
-	/* TODO: Receive the message and get the message size. The message will 
+	/* TODO: Receive the message and get the message size. The message will
      * contain regular information. The message will be of SENDER_DATA_TYPE
      * (the macro SENDER_DATA_TYPE is defined in msg.h).  If the size field
      * of the message is not 0, then we copy that many bytes from the shared
@@ -102,6 +102,10 @@ void mainLoop()
      * NOTE: the received file will always be saved into the file called
      * "recvfile"
      */
+
+message sndMsg;
+message rcvMsg;
+msgSize = 1;
 
 	/* Keep receiving until the sender set the size to 0, indicating that
  	 * there is no more data to send
@@ -118,13 +122,13 @@ void mainLoop()
 				perror("fwrite");
 			}
 
-			/* TODO: Tell the sender that we are ready for the next file chunk. 
+			/* TODO: Tell the sender that we are ready for the next file chunk.
  			 * I.e. send a message of type RECV_DONE_TYPE (the value of size field
- 			 * does not matter in this case). 
+ 			 * does not matter in this case).
  			 */
 			sndMsg.mtype = RECV_DONE_TYPE;
 			sndMsg.size = 0;
-			if (msgsnd(msqid, &sndMSG, 0, 0) == 1)
+			if (msgsnd(msqid, &sndMsg, 0, 0) == 1)
 			{
 				perror("msgsnd");
 			}
