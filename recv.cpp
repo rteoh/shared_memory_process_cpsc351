@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "msg.h"    /* For the message struct */
-
+#include "msg.h" /* For the message struct */
 
 /* The size of the shared memory chunk */
 #define SHARED_MEMORY_CHUNK_SIZE 1000
@@ -19,7 +18,6 @@ void *sharedMemPtr;
 /* The name of the received file */
 const char recvFileName[] = "recvfile";
 
-
 /**
  * Sets up the shared memory segment and message queue
  * @param shmid - the id of the allocated shared memory 
@@ -27,9 +25,9 @@ const char recvFileName[] = "recvfile";
  * @param sharedMemPtr - the pointer to the shared memory
  */
 
-void init(int& shmid, int& msqid, void*& sharedMemPtr)
+void init(int &shmid, int &msqid, void *&sharedMemPtr)
 {
-	
+
 	/* TODO: 1. Create a file called keyfile.txt containing string "Hello world" (you may do
  		    so manually or from the code).
 	         2. Use ftok("keyfile.txt", 'a') in order to generate the key.
@@ -40,16 +38,41 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 		    is unique system-wide among all System V objects. Two objects, on the other hand,
 		    may have the same key.
 	 */
-	
 
-	
+	key_t key = ftok("keyfile.txt", 'a');
+	if (key == -1)
+	{
+		perror("ftok");
+		exit(1);
+	}
+
 	/* TODO: Allocate a piece of shared memory. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
+	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0644);
+	if (shmid == -1)
+	{
+		perror("shmget");
+		exit(1);
+	}
+
 	/* TODO: Attach to the shared memory */
+	sharedMemPtr = shmat(shmid, (void *)0, 0);
+	if (sharedMemPtr == (void *)-1)
+	{
+		perror("shmat");
+		exit(1);
+	}
+
 	/* TODO: Create a message queue */
+	msqid = msgget(key, 0666);
+	if (msqid == -1)
+	{
+		perror("mssget");
+		exit
+	}
+	printf("msqid(%d)", msqid);
+
 	/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
-	
 }
- 
 
 /**
  * The main loop
@@ -58,18 +81,18 @@ void mainLoop()
 {
 	/* The size of the mesage */
 	int msgSize = 0;
-	
+
 	/* Open the file for writing */
-	FILE* fp = fopen(recvFileName, "w");
-		
+	FILE *fp = fopen(recvFileName, "w");
+
 	/* Error checks */
-	if(!fp)
+	if (!fp)
 	{
-		perror("fopen");	
+		perror("fopen");
 		exit(-1);
 	}
-		
-    /* TODO: Receive the message and get the message size. The message will 
+
+	/* TODO: Receive the message and get the message size. The message will 
      * contain regular information. The message will be of SENDER_DATA_TYPE
      * (the macro SENDER_DATA_TYPE is defined in msg.h).  If the size field
      * of the message is not 0, then we copy that many bytes from the shared
@@ -82,23 +105,29 @@ void mainLoop()
 
 	/* Keep receiving until the sender set the size to 0, indicating that
  	 * there is no more data to send
- 	 */	
+ 	 */
 
-	while(msgSize != 0)
-	{	
+	while (msgSize != 0)
+	{
 		/* If the sender is not telling us that we are done, then get to work */
-		if(msgSize != 0)
+		if (msgSize != 0)
 		{
 			/* Save the shared memory to file */
-			if(fwrite(sharedMemPtr, sizeof(char), msgSize, fp) < 0)
+			if (fwrite(sharedMemPtr, sizeof(char), msgSize, fp) < 0)
 			{
 				perror("fwrite");
 			}
-			
+
 			/* TODO: Tell the sender that we are ready for the next file chunk. 
  			 * I.e. send a message of type RECV_DONE_TYPE (the value of size field
  			 * does not matter in this case). 
  			 */
+			sndMsg.mtype = RECV_DONE_TYPE;
+			sndMsg.size = 0;
+			if (msgsnd(msqid, &sndMSG, 0, 0) == 1)
+			{
+				perror("msgsnd");
+			}
 		}
 		/* We are done */
 		else
@@ -109,8 +138,6 @@ void mainLoop()
 	}
 }
 
-
-
 /**
  * Perfoms the cleanup functions
  * @param sharedMemPtr - the pointer to the shared memory
@@ -118,13 +145,14 @@ void mainLoop()
  * @param msqid - the id of the message queue
  */
 
-void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
+void cleanUp(const int &shmid, const int &msqid, void *sharedMemPtr)
 {
 	/* TODO: Detach from shared memory */
-	
+	shmdt(sharedMemPtr);
 	/* TODO: Deallocate the shared memory chunk */
-	
+	shmctl(shmid, IPC_RMID, NULL);
 	/* TODO: Deallocate the message queue */
+	msgctl(msqid, IPC_RMID, NULL);
 }
 
 /**
@@ -138,22 +166,23 @@ void ctrlCSignal(int signal)
 	cleanUp(shmid, msqid, sharedMemPtr);
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-	
+
 	/* TODO: Install a singnal handler (see signaldemo.cpp sample file).
  	 * In a case user presses Ctrl-c your program should delete message
  	 * queues and shared memory before exiting. You may add the cleaning functionality
  	 * in ctrlCSignal().
  	 */
-				
+	signal(SIGINT, ctrlCSignal);
 	/* Initialize */
 	init(shmid, msqid, sharedMemPtr);
-	
+
 	/* Go to the main loop */
 	mainLoop();
 
 	/** TODO: Detach from shared memory segment, and deallocate shared memory and message queue (i.e. call cleanup) **/
-		
+	cleanUp(shmid, msqid, sharedMemPtr);
+
 	return 0;
 }
