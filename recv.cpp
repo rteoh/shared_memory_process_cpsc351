@@ -1,3 +1,4 @@
+  
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <signal.h>
@@ -52,24 +53,30 @@ void init(int &shmid, int &msqid, void *&sharedMemPtr)
 	{
 		perror("shmget");
 		exit(1);
+	} else {
+		printf("Allocate a piece of shared memory.\n");
 	}
 
 	/* TODO: Attach to the shared memory */
 	sharedMemPtr = shmat(shmid, (void *)0, 0);
-	if (sharedMemPtr == (void *)-1)
+	if (sharedMemPtr == (void *) -1)
 	{
 		perror("shmat");
 		exit(1);
+	} else {
+		printf("Attach to the shared memory.\n");
 	}
 
 	/* TODO: Create a message queue */
-	msqid = msgget(key, 0666);
+	msqid = msgget(key, 0666 | IPC_CREAT);
 	if (msqid == -1)
 	{
 		perror("mssget");
 		exit(1);
+	} else {
+		printf("Create a message queue.\n");
 	}
-	printf("msqid(%d)", msqid);
+	//printf("msqid(%d)", msqid);
 
 	/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
 }
@@ -80,16 +87,18 @@ void init(int &shmid, int &msqid, void *&sharedMemPtr)
 void mainLoop()
 {
 	/* The size of the mesage */
-	int msgSize = 0;
-
+	int msgSize = 0;//FROM SAMPLE
+	
 	/* Open the file for writing */
-	FILE *fp = fopen(recvFileName, "w");
-
+	FILE* fp = fopen(recvFileName, "w");//FROM SAMPLE
+		
 	/* Error checks */
-	if (!fp)
+	if(!fp)//FROM SAMPLE
 	{
-		perror("fopen");
+		perror("fopen");	
 		exit(-1);
+	} else {		
+		printf("File opened successfully...Now waiting for a message...\n");
 	}
 
 	/* TODO: Receive the message and get the message size. The message will
@@ -103,9 +112,8 @@ void mainLoop()
      * "recvfile"
      */
 
-message sndMsg;
-message rcvMsg;
-msgSize = 1;
+	message sndMsg, rcvMsg;
+	msgSize++;
 
 	/* Keep receiving until the sender set the size to 0, indicating that
  	 * there is no more data to send
@@ -113,11 +121,26 @@ msgSize = 1;
 
 	while (msgSize != 0)
 	{
+		printf("Reading new message.");
+
+		if (msgrcv(msqid, &rcvMsg, sizeof(rcvMsg), SENDER_DATA_TYPE, 0) == -1) {
+
+			perror("msgrcv");
+			exit(1);
+
+		} else {
+
+			printf("Message has been read.\n");
+
+		}
+
+		msgSize = rcvMsg.size;
+
 		/* If the sender is not telling us that we are done, then get to work */
 		if (msgSize != 0)
 		{
 			/* Save the shared memory to file */
-			if (fwrite(sharedMemPtr, sizeof(char), msgSize, fp) < 0)
+			if (fwrite(sharedMemPtr, sizeof(char), msgSize, fp) == 0)
 			{
 				perror("fwrite");
 			}
@@ -126,11 +149,18 @@ msgSize = 1;
  			 * I.e. send a message of type RECV_DONE_TYPE (the value of size field
  			 * does not matter in this case).
  			 */
+
 			sndMsg.mtype = RECV_DONE_TYPE;
 			sndMsg.size = 0;
+
 			if (msgsnd(msqid, &sndMsg, 0, 0) == 1)
 			{
 				perror("msgsnd");
+
+			} else {
+
+				printf("Empty message has been sent successfully.");
+
 			}
 		}
 		/* We are done */
@@ -152,11 +182,22 @@ msgSize = 1;
 void cleanUp(const int &shmid, const int &msqid, void *sharedMemPtr)
 {
 	/* TODO: Detach from shared memory */
-	shmdt(sharedMemPtr);
+	if(shmdt(sharedMemPtr) == -1) {
+		perror("Error with shmdt()");
+		exit(1);
+	}
 	/* TODO: Deallocate the shared memory chunk */
-	shmctl(shmid, IPC_RMID, NULL);
+	if(shmctl(shmid, IPC_RMID, NULL) == -1) {
+		perror("Error with shmctl()");
+		exit(1);
+	}
 	/* TODO: Deallocate the message queue */
-	msgctl(msqid, IPC_RMID, NULL);
+	if(msgctl(msqid, IPC_RMID, NULL) == -1) {
+		perror("Error with msgctl()");
+		exit(1);
+	}
+
+	printf("Clean Up successful!\n");
 }
 
 /**
@@ -168,6 +209,7 @@ void ctrlCSignal(int signal)
 {
 	/* Free system V resources */
 	cleanUp(shmid, msqid, sharedMemPtr);
+	printf("CTRL + C intiated.\n");
 }
 
 int main(int argc, char **argv)
@@ -187,6 +229,8 @@ int main(int argc, char **argv)
 
 	/** TODO: Detach from shared memory segment, and deallocate shared memory and message queue (i.e. call cleanup) **/
 	cleanUp(shmid, msqid, sharedMemPtr);
+
+	printf("Exited.\n");
 
 	return 0;
 }
