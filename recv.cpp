@@ -87,18 +87,18 @@ void init(int &shmid, int &msqid, void *&sharedMemPtr)
 void mainLoop()
 {
 	/* The size of the mesage */
-	int msgSize = 0;//FROM SAMPLE
-	
+	int msgSize = 0;
+
 	/* Open the file for writing */
-	FILE* fp = fopen(recvFileName, "w");//FROM SAMPLE
-		
+	FILE *fp = fopen(recvFileName, "w");
+
 	/* Error checks */
-	if(!fp)//FROM SAMPLE
+	if (!fp)
 	{
-		perror("fopen");	
+		perror("fopen");
 		exit(-1);
-	} else {		
-		printf("File opened successfully...Now waiting for a message...\n");
+	} else {
+		printf("File has been open for writing.\n");
 	}
 
 	/* TODO: Receive the message and get the message size. The message will
