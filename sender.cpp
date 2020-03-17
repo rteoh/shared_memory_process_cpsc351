@@ -64,14 +64,38 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	/* Get the id of the shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE */
 	shmid = shmget(key,SHARED_MEMORY_CHUNK_SIZE,0666|IPC_CREAT);
 
-	/* TODO: Attach to the shared memory */
-	sharedMemPtr = (char*) shmat(shmid,(void *)0,0); 
+	// Check for errors in getting id of the shared memory segment
+	if(shmid == -1) {
 
-	/* TODO: Attach to the message queue */
+		perror("ERROR! Could not get the ID of the shared memory segment using shmget()");
+		exit(1);
+
+	}
+
+	/* Attach to the shared memory */
+	sharedMemPtr = shmat(shmid, (void *)0, 0);
+
+	// Check for errors in attaching to the shared memory
+	if(sharedMemPtr == (void *) -1) {
+
+		perror("ERROR! Could not the shared memory segment to the shared memory using shmat()");
+		exit(1);
+
+	}
+
+	/* Attach to the message queue */
 	msqid = msgget(key, 0666 | IPC_CREAT);
 
+	// Check for errors in attaching to the shared memory
+	if(msqid == -1) {
+
+		perror("ERROR! Could not attach to message queue using msgget()");
+		exit(1);
+
+	}
+
 	/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
-	printf("msqid: %d \n", msqid);
+	//cout << "mqid: " << msqid << endl;
 
 	
 }
@@ -85,7 +109,17 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 
 void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 {
+
+	//cout << "sharedMemPtr (Before): " << sharedMemPtr << endl;
+
+
 	/* TODO: Detach from shared memory */
+	shmdt(sharedMemPtr);
+
+
+
+	//cout << "sharedMemPtr (After): " << sharedMemPtr << endl;
+
 }
 
 /**
@@ -118,9 +152,9 @@ void send(const char* fileName)
  		 * fread will return how many bytes it has actually read (since the last chunk may be less
  		 * than SHARED_MEMORY_CHUNK_SIZE).
  		 */
-		if((sndMsg.size = fread(sharedMemPtr, sizeof(char), SHARED_MEMORY_CHUNK_SIZE, fp)) < 0)
-		{
-			perror("fread");
+		if ((sndMsg.size = fread(sharedMemPtr, sizeof(char), SHARED_MEMORY_CHUNK_SIZE, fp)) < 0) {
+
+			perror("ERROR! Could not send message to the receiver using fread()");
 			exit(-1);
 		}
 		
@@ -128,10 +162,34 @@ void send(const char* fileName)
 		/* TODO: Send a message to the receiver telling him that the data is ready 
  		 * (message of type SENDER_DATA_TYPE) 
  		 */
+
+		sndMsg.mtype = SENDER_DATA_TYPE;
+
+		if (msgsnd(msqid, &sndMsg, sizeof(sndMsg), 0) == -1) {
+
+			perror("ERROR! Could not send message to the receiver using msgsnd()");
+
+		}
+
+		printf("Message was sent!\n");
+
 		
 		/* TODO: Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us 
  		 * that he finished saving the memory chunk. 
  		 */
+
+		printf("Waiting for message to be received.\n");
+
+		if (msgrcv(msqid, &rcvMsg, 0, RECV_DONE_TYPE, 0)) {
+
+			perror("ERROR! Could not wait for the receiver sending confirmation on saving the memory chunk using msgrcv()");		
+			exit(1);
+
+		}
+
+		printf("Message has been recieved!\n");
+
+
 	}
 	
 
@@ -139,6 +197,22 @@ void send(const char* fileName)
  	  * Lets tell the receiver that we have nothing more to send. We will do this by
  	  * sending a message of type SENDER_DATA_TYPE with size field set to 0. 	
 	  */
+
+
+	sndMsg.size = 0;
+	sndMsg.mtype = SENDER_DATA_TYPE;
+
+
+	if (msgsnd(msqid, &sndMsg, sizeof(sndMsg), 0) == -1) {
+
+		perror("ERROR! Empty message could not be sent using msgsnd()");
+
+	} else {
+
+		printf("Empty message has been sent!\n");
+
+	}
+
 
 		
 	/* Close the file */
@@ -161,10 +235,10 @@ int main(int argc, char** argv)
 	init(shmid, msqid, sharedMemPtr);
 	
 	/* Send the file */
-	//send(argv[1]);
+	send(argv[1]);
 	
 	/* Cleanup */
-	//cleanUp(shmid, msqid, sharedMemPtr);
+	cleanUp(shmid, msqid, sharedMemPtr);
 		
 	return 0;
 }
