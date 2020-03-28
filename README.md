@@ -14,6 +14,14 @@ teohr@csu.fullerton.edu
 
 Contribution: Implemented code in sender.cpp and added error checking in recv.cpp
 
+Nathan Marcos
+
+CPSC 351-02
+
+Nathanmarcos@csu.fullerton.edu
+
+Contribution: Implemented code on recv.cpp
+
 
 
 ## How to execute program
