@@ -1,13 +1,17 @@
 # CPSC 351 Assignment #1
 
 Coded in C++.
+
 Extra credit was not implemented.
 
 ## Group
 
 Ryan Teoh
+
 CPSC 351-03
+
 teohr@csu.fullerton.edu
+
 Contribution: Implemented code in sender.cpp and added error checking in recv.cpp
 
 
