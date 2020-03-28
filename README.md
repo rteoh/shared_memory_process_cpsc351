@@ -31,6 +31,7 @@ CPSC 351-03
 
 aaronjimenez97@csu.fullerton.edu
 
+Contribution: Implemented code on recv.cpp and sender.cpp
 
 ## How to execute program
 
