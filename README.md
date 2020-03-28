@@ -25,6 +25,12 @@ Nathanmarcos@csu.fullerton.edu
 Contribution: Implemented code on recv.cpp
 
 
+Aaron Jimenez-Lopez
+
+CPSC 351-03
+
+aaronjimenez97@csu.fullerton.edu
+
 
 ## How to execute program
 
