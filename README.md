@@ -12,7 +12,7 @@ CPSC 351-03
 
 teohr@csu.fullerton.edu
 
-Contribution: Implemented code in sender.cpp and added error checking in recv.cpp
+Contribution: Implemented code in main.cpp
 
 
 
@@ -22,7 +22,7 @@ CPSC 351-02
 
 Nathanmarcos@csu.fullerton.edu
 
-Contribution: Implemented code on recv.cpp
+Contribution: Implemented code on main.cpp
 
 
 Aaron Jimenez-Lopez
@@ -31,11 +31,14 @@ CPSC 351-03
 
 aaronjimenez97@csu.fullerton.edu
 
-Contribution: Implemented code on recv.cpp and sender.cpp
+Contribution: Implemented code on main.cpp
 
 ## How to execute program
 
-1. First cd into the directory of the program and and compile it by typing: make
-2. Run the programs by typing ./sender <FILE> and ./recv
+1. First cd into the directory of the program and 
+2. Compile it by typing 'make' in terminal
+3. Type './main' in terminal
+4. You will then be asked to type in your desired memory size and page size. 
+5. The program will then run.
 
 
