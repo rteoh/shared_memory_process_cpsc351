@@ -2,8 +2,6 @@
 
 Coded in C++.
 
-Extra credit was not implemented.
-
 ## Group
 
 Ryan Teoh
